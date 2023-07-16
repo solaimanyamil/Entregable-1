@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul  5 16:41:53 2023
-
 @author: Yamil
 """
 import requests
