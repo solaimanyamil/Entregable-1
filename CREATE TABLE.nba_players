@@ -1,0 +1,14 @@
+CREATE TABLE nba_players
+(id INT NOT NULL PRIMARY KEY,
+player_name VARCHAR(255),
+player_age INT NOT NULL,
+games INT NOT NULL,
+minutes_played FLOAT NOT NULL,
+points INT NOT NULL,
+asists INT NOT NULL,
+stils INT NOT NULL,
+blocks INT NOT NULL,
+turnovers INT NOT NULL,
+team VARCHAR(255),
+season INT NOT NULL
+)
