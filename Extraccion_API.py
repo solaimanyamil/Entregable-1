@@ -1,21 +1,25 @@
 import requests
 import json
 import pandas as pd
-import psycopeg2
 from sqlalchemy import create_engine
+
 
 def get_data_from_api(url):
     
-    '''' Función que hace la solicitud a la API
-    y devuelve los datos en formato JSON. '''
+    '''Función que hace la solicitud a la API y devuelve
+    los datos en formato JSON.'''
     
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return data['results']
+        next_url = data.get('next')
+        if next_url:
+            return data['results'], next_url
+        else:
+            return data['results'], None
     else:
-        raise Exception(f"Error en la solicitud. Código de estado: {response.status_code}")
-
+        raise Exception(f"Error en la solicitud. Código de estado: {response.status_code}") 
+        
 def transform_data(data):
     
     '''' Función que recibe datos en formato JSON,
@@ -75,7 +79,7 @@ def transform_data(data):
 
     return df
 
-def load_data_to_redshift(df, table_name, schema_name, db_username, db_password, db_name, db_host, db_port):
+def load_data_to_redshift(df_final, table_name, schema_name, db_username, db_password, db_name, db_host, db_port):
     
     ''''Función que configura la conexión con Redshift
     y carga el DataFrame en la tabla nba_players.'''
@@ -88,17 +92,32 @@ def load_data_to_redshift(df, table_name, schema_name, db_username, db_password,
     print("Los datos han sido cargados exitosamente en Redshift.")
 
 
-
 if __name__ == "__main__":
     
-    # Hacer la solicitud a la API:
-    url = 'https://nba-stats-db.herokuapp.com/api/playerdata/topscorers/playoffs/2023/'
-    data = get_data_from_api(url)
-
-    # Transformar los datos y obtener el DataFrame resultante:
-    df = transform_data(data)
-
+    # Lista de temporadas consultadas:
+    seasons = [2023, 2011]
     
+    # Lista para almacenar los DataFrames de todas las temporadas:
+    all_dfs = []
+    
+    for season in seasons:
+        url = f'https://nba-stats-db.herokuapp.com/api/playerdata/topscorers/playoffs/{season}/'
+        all_results = []
+        while url:
+            data, url = get_data_from_api(url)
+            all_results.extend(data)
+            if url is None:
+                break  
+            
+        # Transformar los datos y obtener el DataFrame resultante:
+        df = transform_data(all_results)
+        # Agregar el DataFrame al listado de DataFrames:
+        all_dfs.append(df)
+
+    # Combinar todos los DataFrames en uno solo:
+    df_final = pd.concat(all_dfs, ignore_index=True)
+    
+'''    
     # Configurar la conexión con Amazon Redshift:
     db_username = 'solaimanyamil_coderhouse'
     db_password = 'NbOb637sCW'
@@ -109,5 +128,7 @@ if __name__ == "__main__":
     # Cargar los datos en la tabla de Redshift:
     table_name = 'nba_players'
     schema_name = 'solaimanyamil_coderhouse'
-    load_data_to_redshift(df, table_name, schema_name, db_username, db_password, db_name, db_host, db_port)
+    load_data_to_redshift(df_final, table_name, schema_name, db_username, db_password, db_name, db_host, db_port)
+'''
+
 
