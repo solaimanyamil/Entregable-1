@@ -116,8 +116,7 @@ if __name__ == "__main__":
 
     # Combinar todos los DataFrames en uno solo:
     df_final = pd.concat(all_dfs, ignore_index=True)
-    
-'''    
+      
     # Configurar la conexión con Amazon Redshift:
     db_username = 'solaimanyamil_coderhouse'
     db_password = 'NbOb637sCW'
@@ -129,6 +128,3 @@ if __name__ == "__main__":
     table_name = 'nba_players'
     schema_name = 'solaimanyamil_coderhouse'
     load_data_to_redshift(df_final, table_name, schema_name, db_username, db_password, db_name, db_host, db_port)
-'''
-
-
