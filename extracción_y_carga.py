@@ -87,11 +87,23 @@ def load_data_to_redshift(df_final, table_name, schema_name, db_username, db_pas
     # Objeto de conexión al motor de BD:
     engine = create_engine(f'postgresql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}')
 
-    # Cargar los datos en la tabla de Redshift:
-    df.to_sql(table_name, engine, schema=schema_name, if_exists='append', index=False)
+    # Obtener los IDs existentes en la tabla (armado de query + ejecución):
+    existing_ids_query = f'SELECT id FROM {schema_name}.{table_name}'
+    existing_ids = pd.read_sql_query(existing_ids_query, engine)['id']
+    
+    # Filtrar el DF para eliminar los registros que ya existen en la tabla:
+    df_no_duplicates = df_final[~df_final['id'].isin(existing_ids)]
+    
+    # Comprobar si quedan datos después de eliminar los duplicados:
+    if df_no_duplicates.empty:
+        print("No hay nuevos datos para cargar.")
+        return
+
+    # Cargar los datos en la tabla de Redshift (solo los que no están duplicados):
+    df_no_duplicates.to_sql(table_name, engine, schema=schema_name, if_exists='append', index=False)
     print("Los datos han sido cargados exitosamente en Redshift.")
-
-
+        
+    
 if __name__ == "__main__":
     
     # Lista de temporadas consultadas:
@@ -116,7 +128,8 @@ if __name__ == "__main__":
 
     # Combinar todos los DataFrames en uno solo:
     df_final = pd.concat(all_dfs, ignore_index=True)
-      
+    
+    
     # Configurar la conexión con Amazon Redshift:
     db_username = 'solaimanyamil_coderhouse'
     db_password = 'NbOb637sCW'
